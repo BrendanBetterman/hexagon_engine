@@ -2,15 +2,12 @@
 //extern crate glium;
 #[allow(unused_imports)]
 use glium::glutin::dpi::Position;
-use glium::texture::SrgbTexture2d;
 use glium::{glutin, Surface,Display};
-use glium::vertex::VertexBufferAny;
 use glutin::event_loop::EventLoop;
-use image::ImageBuffer;
 use rand::Rng;
 use std::io::Cursor;
-use std::str::Bytes;
-use std::usize;
+
+use crate::support::mesh::Mesh;
 use crate::support::tile::HexTile;
 use super::support::camera::CameraState;
 use super::support;
@@ -18,33 +15,52 @@ use super::support;
 pub struct Renderer{
     //event_loop: EventLoop<()>,
     display: Display,
-    diffuse_texture: glium::texture::SrgbTexture2d,
-    vertex_buffer: Vec<VertexBufferAny>,
+    mesh_buffer: Vec<Mesh>,
     tiles:Vec<HexTile>,
 }
 impl Renderer{
     pub fn new(event_loop:&EventLoop<()>) -> Renderer{
         let display = create_display(&event_loop);
-        let diffuse_texture = create_diffuse_texture(&display,&include_bytes!("textures/Texture.png"));
         
-        let mut vex_buff = Vec::new();
+        let mut mesh_buffer = Vec::new();
         let mut ra =rand::thread_rng();
         let seed = ra.gen_range(0..100000);
 
         let mut tiles= Vec::new();
+        let size = 3;
+        let map = [
+            [0,2],[0,3],[0,4],
+            [1,1],[1,2],[1,3],[1,4],
+            [2,1],[2,2],[2,3],[2,4],[2,5],
+            [3,1],[3,2],[3,3],[3,4],
+            [4,2],[4,3],[4,4]
+            ];
+        for i in 0..map.len(){
+                let vert = 27.7128;
+                let tile = support::tile::HexTile::new(map[i][1] as f32*vert+(vert/2.0*(map[i][0]%2)as f32),map[i][0] as f32*24.0,support::tile::Resource::Wood,0);
+                
+                mesh_buffer.push(Mesh::new(
+                    support::make_hex_chunk(&display, include_bytes!("models/HexTile.obj"), &tile, seed), 
+                    create_diffuse_texture(&display,&include_bytes!("textures/Sand.png"))));
+                tiles.push(tile);
+        }
+/*
         for x in 0..5{
             for z in 0..5{
-                let tile = support::tile::HexTile::new(x as f32*13.856*2.0+(13.856*(z%2)as f32),z as f32*24.0,support::tile::Resource::Wood,0);
-                vex_buff.push(support::make_hex_chunk(&display, include_bytes!("models/HexTile.obj"), &tile, seed));
+                let vert = 27.7128 + 1.0;
+                let tile = support::tile::HexTile::new(x as f32*vert+(vert/2.0*(z%2)as f32),z as f32*25.0,support::tile::Resource::Wood,0);
+                
+                mesh_buffer.push(Mesh::new(
+                    support::make_hex_chunk(&display, include_bytes!("models/HexTile.obj"), &tile, seed), 
+                    create_diffuse_texture(&display,&include_bytes!("textures/Texture.png"))));
                 tiles.push(tile);
             }
         }
-
+*/
         return Renderer{
             //event_loop: event_loop,
             display: display,
-            diffuse_texture: diffuse_texture,
-            vertex_buffer: vex_buff,
+            mesh_buffer: mesh_buffer,
             tiles: tiles
         };
     }
@@ -56,15 +72,7 @@ impl Renderer{
                 fragment: include_str!("shaders/Fragment.frag"),
             },
         ).unwrap();
-         // building the uniforms
-         let uniforms = uniform! {
-            persp_matrix: camera.get_perspective(),
-            view_matrix: camera.get_view(),
-            diffuse_tex: &self.diffuse_texture,
-            rot_x_matrix: camera.get_rot_x(),
-            rot_y_matrix: camera.get_rot_y(),
-            // get objects rotation
-        };
+
         // draw parameters
         let params = glium::DrawParameters {
             depth: glium::Depth {
@@ -80,8 +88,17 @@ impl Renderer{
             
         }
         target.clear_color_and_depth((0.68,0.88,0.9, 0.0), 1.0);
-        for i in 0..self.vertex_buffer.len(){
-            target.draw(&self.vertex_buffer[i],
+        for i in 0..self.mesh_buffer.len(){
+            // building the uniforms
+            let uniforms = uniform! {
+                persp_matrix: camera.get_perspective(),
+                view_matrix: camera.get_view(),
+                diffuse_tex: &self.mesh_buffer[i].diffuse_texture,
+                rot_x_matrix: camera.get_rot_x(),
+                rot_y_matrix: camera.get_rot_y(),
+                // get objects rotation
+            };
+            target.draw(&self.mesh_buffer[i].vertex_buffer,
             &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
             &program, &uniforms, &params).unwrap();
         }

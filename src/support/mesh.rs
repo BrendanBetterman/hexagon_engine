@@ -1,7 +1,7 @@
 
 pub struct Mesh {
-    vertex_buffer: glium::vertex::VertexBufferAny,
-    diffuse_texture: glium::texture::SrgbTexture2d,
+    pub vertex_buffer: glium::vertex::VertexBufferAny,
+    pub diffuse_texture: glium::texture::SrgbTexture2d,
 }
 
 impl Mesh {

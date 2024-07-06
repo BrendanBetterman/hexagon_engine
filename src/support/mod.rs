@@ -1,11 +1,13 @@
 #![allow(dead_code)]
 use std::time::{Duration, Instant};
+use glium::glutin::dpi::Position;
 use glium::{self, Display};
 use glium::vertex::VertexBufferAny;
 use glium::glutin::event_loop::{EventLoop, ControlFlow};
 use glium::glutin::event::{Event, StartCause};
 use obj;
 use noise::{NoiseFn, Perlin};
+use rand::Rng;
 use crate::support::tile::HexTile;
 pub mod camera;
 pub mod tile;
@@ -63,6 +65,38 @@ pub fn start_loop<F>(event_loop: EventLoop<()>, mut callback: F)->! where F: 'st
         texture: [f32; 2],
     }
 
+pub fn generate_height(position: [f32;3],tile: &HexTile,perlin:&Perlin)->f32{
+    let smoothness = 0.035;
+    let slope = 57.5;
+    let baseheight = 1.0;
+    ((perlin.get([((position[0] + tile.x)) as f64 * smoothness,1.0,((position[2] + tile.z)) as f64 * smoothness]) + baseheight) * slope) as f32
+}
+
+pub fn generate_normal(position: [f32;3],tile: &HexTile,perlin:&Perlin)->[f32;3]{
+    let offset = 0.15;
+    let mut normal = [0.0,0.0,0.0];
+    normal[0] = generate_height([position[0]-offset,position[1],position[2]], tile, perlin) - generate_height([position[0]+offset,position[1],position[2]], tile, perlin);
+    normal[2] = generate_height([position[0],position[1],position[2]-offset], tile, perlin) - generate_height([position[0],position[1],position[2]+offset], tile, perlin);
+    normal[1] = 2.0;
+
+    normalize(normal)
+}
+pub fn normalize(normal: [f32;3])->[f32;3]{
+    let mut min_v = normal[0];
+    let mut max_v = normal[1];
+    for i in normal{
+        if i < min_v{
+            min_v = i;
+        } else {
+            max_v = i;  
+        }
+    }
+    let mut out = [0.0,0.0,0.0];
+    for i in 0..3{
+        out[i] = (normal[i]-min_v)/(max_v-min_v);
+    }
+    out
+}
 pub fn make_hex_chunk(display: &Display, data: &[u8],tile: &HexTile,seed:u32) -> VertexBufferAny {
     #[derive(Copy, Clone)]
     struct Vertex {
@@ -70,14 +104,8 @@ pub fn make_hex_chunk(display: &Display, data: &[u8],tile: &HexTile,seed:u32) ->
         normal: [f32; 3],
         texture: [f32; 2],
     }
-    let perlin = Perlin::new(seed);
-    let smoothness = 0.35;
-    let slope = 17.5;
-    let baseheight = 3.0;
     let scale = 10.0;
-    //world
-    
-
+    let perlin = Perlin::new(seed);
     implement_vertex!(Vertex, position, normal, texture);
 
     let mut data = ::std::io::BufReader::new(data);
@@ -95,15 +123,13 @@ pub fn make_hex_chunk(display: &Display, data: &[u8],tile: &HexTile,seed:u32) ->
                         let texture = v.1.map(|index| data.texture[index]);
                         let normal = v.2.map(|index| data.normal[index]);
                         let texture = texture.unwrap_or([0.0, 0.0]);
-                        let normal = normal.unwrap_or([0.0, 0.0, 0.0]);
-                        
+                        let mut normal = normal.unwrap_or([0.0, 0.0, 0.0]);
+
                         if !(position[1] < 0.0) {
-                            let height = ((
-                                perlin.get([
-                                    ((position[0] + tile.x) * scale) as f64 * smoothness,
-                                    ((position[2] + tile.z) * scale) as f64 * smoothness,
-                                    1.0
-                                    ]) + baseheight) * slope) as f32;
+                            let height = generate_height(position,tile,&perlin);
+                            if normal[0] <0.5 && normal[1] >0.5 && normal[2] <0.5{
+                                normal = generate_normal(position,tile,&perlin);
+                            }
                             position = [(position[0]+tile.x)*scale,height,(position[2]+tile.z)*scale];
                         }else{
                             position = [(position[0]+tile.x)*scale,position[1]*scale,(position[2]+tile.z)*scale];
