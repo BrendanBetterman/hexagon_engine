@@ -1,0 +1,18 @@
+[package]
+name = "voxel_engine"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[dependencies]
+winit = "0.26"
+env_logger = "0.9"
+log = "0.4"
+obj = { version = "0.10", features = ["genmesh"] }
+glium = "0.32.1"
+rand = "0.8"
+image = "0.24"
+noise = "0.8.2"
+
