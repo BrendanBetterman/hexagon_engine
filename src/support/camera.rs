@@ -164,7 +164,7 @@ impl CameraState {
 
     pub fn update(&mut self) {
         
-        let move_speed = 0.5* self.delta_time;
+        let move_speed = 2.5* self.delta_time;
         //let up = (0.0, 1.0, 0.0);
 
         //let s = (f.1 * up.2 - f.2 * up.1,

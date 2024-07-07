@@ -151,7 +151,7 @@ pub fn make_hex_chunk(display: &Display, data: &[u8],tile: &HexTile,seed:u32) ->
 
 
 /// Returns a vertex buffer that should be rendered as `TrianglesList`.
-pub fn load_wavefront(display: &Display, data: &[u8]) -> VertexBufferAny {
+pub fn load_wavefront(display: &Display, data: &[u8],scale:f32,pos: [f32;3]) -> VertexBufferAny {
     #[derive(Copy, Clone)]
     struct Vertex {
         position: [f32; 3],
@@ -172,8 +172,9 @@ pub fn load_wavefront(display: &Display, data: &[u8]) -> VertexBufferAny {
                 obj::SimplePolygon(indices) => {
                     for v in indices.iter() {
                         let mut position = data.position[v.0];
-                        position[0] *= 10.0;
-                        position[2] *= 10.0;
+                        position[0] = position[0] * scale + pos[0];
+                        position[1] = position[1] * scale + pos[1];
+                        position[2] = position[2] * scale + pos[2];
                         let texture = v.1.map(|index| data.texture[index]);
                         let normal = v.2.map(|index| data.normal[index]);
 
