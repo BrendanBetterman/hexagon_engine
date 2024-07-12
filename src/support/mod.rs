@@ -12,6 +12,7 @@ use crate::support::tile::HexTile;
 pub mod camera;
 pub mod tile;
 pub mod mesh;
+
 pub enum Action {
     Stop,
     Continue,
@@ -67,8 +68,8 @@ pub fn start_loop<F>(event_loop: EventLoop<()>, mut callback: F)->! where F: 'st
 
 pub fn generate_height(position: [f32;3],tile: &HexTile,perlin:&Perlin)->f32{
     let smoothness = 0.035;
-    let slope = 57.5;
-    let baseheight = 1.0;
+    let slope = 177.5;
+    let baseheight = 0.1;
     ((perlin.get([((position[0] + tile.x)) as f64 * smoothness,1.0,((position[2] + tile.z)) as f64 * smoothness]) + baseheight) * slope) as f32
 }
 

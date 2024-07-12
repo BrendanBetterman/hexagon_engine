@@ -18,6 +18,9 @@ pub struct Renderer{
     display: Display,
     mesh_buffer: Vec<Mesh>,
     tiles:Vec<HexTile>,
+    rock_tex: glium::texture::SrgbTexture2d,
+    grass_tex: glium::texture::SrgbTexture2d,
+    sand_tex: glium::texture::SrgbTexture2d,
 }
 impl Renderer{
     pub fn new(event_loop:&EventLoop<()>) -> Renderer{
@@ -40,6 +43,11 @@ impl Renderer{
         let grass = include_bytes!("textures/Grass.png");
         let sand = include_bytes!("textures/Sand.png");
         let ore = include_bytes!("textures/Ore.png");
+
+        let grass_tex = create_diffuse_texture(&display,&include_bytes!("textures/Grass.png"));
+        let rock_tex = create_diffuse_texture(&display,&include_bytes!("textures/Ore.png"));
+        let sand_tex = create_diffuse_texture(&display,&include_bytes!("textures/Sand.png"));
+
         for i in 0..map.len(){
                 let vert = 27.7128;
                 let tile = support::tile::HexTile::new(map[i][1] as f32*vert+(vert/2.0*(map[i][0]%2)as f32)-80.0,map[i][0] as f32*24.0-80.0,
@@ -63,11 +71,11 @@ impl Renderer{
                 );
                 tiles.push(tile);
         }
-        mesh_buffer.push(Mesh::new(load_wavefront(&display, include_bytes!("models/Water.obj"),50.0,[0.0,0.0,0.0]),
+       /*mesh_buffer.push(Mesh::new(load_wavefront(&display, include_bytes!("models/Water.obj"),50.0,[0.0,0.0,0.0]),
         create_diffuse_texture(&display,&include_bytes!("textures/Water.png"))));
         mesh_buffer.push(Mesh::new(load_wavefront(&display, include_bytes!("models/Tree.obj"),10.0,[0.0,50.0,0.0]),
         create_diffuse_texture(&display,&include_bytes!("textures/Leaves.png"))));
-/*
+
         for x in 0..5{
             for z in 0..5{
                 let vert = 27.7128 + 1.0;
@@ -84,15 +92,18 @@ impl Renderer{
             //event_loop: event_loop,
             display: display,
             mesh_buffer: mesh_buffer,
-            tiles: tiles
+            tiles: tiles,
+            grass_tex: grass_tex,
+            rock_tex: rock_tex,
+            sand_tex: sand_tex
         };
     }
     pub fn render_frame(&mut self,camera:&CameraState){
         
         let program = program!(&self.display,
             140 => {
-                vertex: include_str!("shaders/Vertex.vert"),
-                fragment: include_str!("shaders/Fragment.frag"),
+                vertex: include_str!("shaders/Terrain.vert"),
+                fragment: include_str!("shaders/Terrain.frag"),
             },
         ).unwrap();
 
@@ -111,12 +122,15 @@ impl Renderer{
             
         }
         target.clear_color_and_depth((0.68,0.88,0.9, 0.0), 1.0);
+
         for i in 0..self.mesh_buffer.len(){
             // building the uniforms
             let uniforms = uniform! {
                 persp_matrix: camera.get_perspective(),
                 view_matrix: camera.get_view(),
-                diffuse_tex: &self.mesh_buffer[i].diffuse_texture,
+                grass_tex: &self.grass_tex,
+                rock_tex: &self.rock_tex,
+                sand_tex: &self.sand_tex,
                 rot_x_matrix: camera.get_rot_x(),
                 rot_y_matrix: camera.get_rot_y(),
                 // get objects rotation
