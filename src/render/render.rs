@@ -2,16 +2,14 @@
 //extern crate glium;
 #[allow(unused_imports)]
 use glium::glutin::dpi::Position;
-use glium::{glutin, Surface,Display};
+use glium::{glutin, Surface,Display,program,uniform};
 use glutin::event_loop::EventLoop;
 use rand::Rng;
-use std::io::Cursor;
 
-use crate::support::load_wavefront;
-use crate::support::mesh::Mesh;
-use crate::support::tile::{num_resource, HexTile};
+use crate::render::support::world_generation::make_hex_chunk;
+use crate::render::support::mesh::{Mesh,load_wavefront,create_diffuse_texture};
+use crate::render::support::tile::{num_resource, HexTile,Resource};
 use super::support::camera::CameraState;
-use super::support;
 
 pub struct Renderer{
     //event_loop: EventLoop<()>,
@@ -38,39 +36,40 @@ impl Renderer{
             [3,1],[3,2],[3,3],[3,4],
             [4,2],[4,3],[4,4]
             ];
-        let tile_mesh = include_bytes!("models/HexTile.obj");
+        let tile_mesh = include_bytes!("../models/HexTile.obj");
 
-        let grass = include_bytes!("textures/Grass.png");
-        let sand = include_bytes!("textures/Sand.png");
-        let ore = include_bytes!("textures/Ore.png");
+        let grass = include_bytes!("../textures/Grass.png");
+        let sand = include_bytes!("../textures/Sand.png");
+        let ore = include_bytes!("../textures/Ore.png");
 
-        let grass_tex = create_diffuse_texture(&display,&include_bytes!("textures/Grass.png"));
-        let rock_tex = create_diffuse_texture(&display,&include_bytes!("textures/Ore.png"));
-        let sand_tex = create_diffuse_texture(&display,&include_bytes!("textures/Sand.png"));
+        let grass_tex = create_diffuse_texture(&display,&include_bytes!("../textures/Grass.png"));
+        let rock_tex = create_diffuse_texture(&display,&include_bytes!("../textures/Ore.png"));
+        let sand_tex = create_diffuse_texture(&display,&include_bytes!("../textures/Sand.png"));
 
         for i in 0..map.len(){
                 let vert = 27.7128;
-                let tile = support::tile::HexTile::new(map[i][1] as f32*vert+(vert/2.0*(map[i][0]%2)as f32)-80.0,map[i][0] as f32*24.0-80.0,
+                let tile = HexTile::new(map[i][1] as f32*vert+(vert/2.0*(map[i][0]%2)as f32)-80.0,map[i][0] as f32*24.0-80.0,
                 num_resource(ra.gen_range(0..6)),
                 0);
                 mesh_buffer.push(
                 match tile.resource{
-                    support::tile::Resource::Wood => Mesh::new(
-                        support::make_hex_chunk(&display,tile_mesh , &tile, seed), 
+                    Resource::Wood => Mesh::new(
+                        make_hex_chunk(&display,tile_mesh , &tile, seed), 
                         create_diffuse_texture(&display,&grass)),
-                    support::tile::Resource::Ore => Mesh::new(
-                        support::make_hex_chunk(&display,tile_mesh , &tile, seed), 
+                    Resource::Ore => Mesh::new(
+                        make_hex_chunk(&display,tile_mesh , &tile, seed), 
                         create_diffuse_texture(&display,&ore)),
-                        support::tile::Resource::Desert => Mesh::new(
-                            support::make_hex_chunk(&display,tile_mesh , &tile, seed), 
+                        Resource::Desert => Mesh::new(
+                            make_hex_chunk(&display,tile_mesh , &tile, seed), 
                             create_diffuse_texture(&display,&sand)),
                     _=> Mesh::new(
-                        support::make_hex_chunk(&display, tile_mesh, &tile, seed), 
+                        make_hex_chunk(&display, tile_mesh, &tile, seed), 
                         create_diffuse_texture(&display,&grass)),
                 }
                 );
                 tiles.push(tile);
         }
+        mesh_buffer.push(Mesh::new(load_wavefront(&display, include_bytes!("../models/test.obj"), 10.0, [0.0,250.0,0.0]),create_diffuse_texture(&display, &grass)));
        /*mesh_buffer.push(Mesh::new(load_wavefront(&display, include_bytes!("models/Water.obj"),50.0,[0.0,0.0,0.0]),
         create_diffuse_texture(&display,&include_bytes!("textures/Water.png"))));
         mesh_buffer.push(Mesh::new(load_wavefront(&display, include_bytes!("models/Tree.obj"),10.0,[0.0,50.0,0.0]),
@@ -102,8 +101,8 @@ impl Renderer{
         
         let program = program!(&self.display,
             140 => {
-                vertex: include_str!("shaders/Terrain.vert"),
-                fragment: include_str!("shaders/Terrain.frag"),
+                vertex: include_str!("../shaders/Terrain.vert"),
+                fragment: include_str!("../shaders/Terrain.frag"),
             },
         ).unwrap();
 
@@ -153,11 +152,4 @@ pub fn create_display(event_loop:&EventLoop<()>) -> Display {
     
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     glium::Display::new(wb, cb, &event_loop).unwrap()
-}
-pub fn create_diffuse_texture<const N: usize>(display: &Display,image_path: &'static [u8; N]) -> glium::texture::SrgbTexture2d{
-    let image = image::load(Cursor::new(image_path),
-                            image::ImageFormat::Png).unwrap().to_rgba8();
-    let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    glium::texture::SrgbTexture2d::new(display, image).unwrap()
 }

@@ -3,9 +3,7 @@
 extern crate glium;
 #[allow(unused_imports)]
 use glium::{glutin, Surface};
-use render::Renderer;
 use std::time::Instant;
-mod support;
 mod render;
 
 
@@ -13,14 +11,14 @@ fn main() {
     // building the display, ie. the main object
     let event_loop = glutin::event_loop::EventLoop::new();
     
-    let mut renderer = Renderer::new(&event_loop);
-    let mut camera = support::camera::CameraState::new();
+    let mut renderer = render::render::Renderer::new(&event_loop);
+    let mut camera = render::support::camera::CameraState::new();
     let mut now = Instant::now();
     let mut frame = 0;
     let mut delta_time = Instant::now();
     
     // the main loop
-    support::start_loop(event_loop, move |events| {
+    render::support::start_loop(event_loop, move |events| {
         //now = Instant::now();
         camera.set_delta_time(delta_time.elapsed().as_secs_f32());
         delta_time = Instant::now();
@@ -37,13 +35,13 @@ fn main() {
         
         renderer.render_frame(&camera);
         
-        let mut action = support::Action::Continue;
+        let mut action = render::support::Action::Continue;
 
         // polling and handling the events received by the window
         for event in events {
             match event {
                 glutin::event::Event::WindowEvent { event, .. } => match event {
-                    glutin::event::WindowEvent::CloseRequested => action = support::Action::Stop,
+                    glutin::event::WindowEvent::CloseRequested => action = render::support::Action::Stop,
                     
                     ev => camera.process_input(&ev),
                 },
@@ -54,7 +52,7 @@ fn main() {
         for event in events {
             match event {
                 glutin::event::Event::WindowEvent { event, .. } => match event {
-                    glutin::event::WindowEvent::CloseRequested => action = support::Action::Stop,
+                    glutin::event::WindowEvent::CloseRequested => action = render::support::Action::Stop,
                     
                     ev => camera.process_mouse(&ev),
                 },

@@ -4,6 +4,7 @@
 #[allow(unused_imports)]
 use glium::{glutin, Surface};
 
+#[derive(Copy, Clone)]
 pub struct CameraState {
     aspect_ratio: f32,
     pub position: (f32, f32, f32),
@@ -21,7 +22,6 @@ pub struct CameraState {
     moving_forward: bool,
     moving_backward: bool,
     pi: f32,
-    fov: f32,
 }
 
 impl CameraState {
@@ -43,43 +43,11 @@ impl CameraState {
             moving_forward: false,
             moving_backward: false,
             pi: std::f32::consts::PI,
-            fov: 3.14159,
-        }
-    }
-    
-    pub fn clone(&self) ->CameraState{
-        CameraState {
-            aspect_ratio: 1920.0 / 1080.0,//768.0
-            position: self.position,
-            direction: self.direction,
-            angle: self.angle,
-            mouse_start_position: self.mouse_start_position,
-            delta_time: 0.0,
-            rotate_left: false,
-            rotate_right: false,
-            clicked: false,
-            moving_up: false,
-            moving_left: false,
-            moving_down: false,
-            moving_right: false,
-            moving_forward: false,
-            moving_backward: false,
-            pi: std::f32::consts::PI,
-            fov: 3.14159,
         }
     }
     pub fn set_delta_time(&mut self,time:f32){
         self.delta_time = time;
     }
-    pub fn set_position(&mut self, pos: (f32, f32, f32)) {
-        self.position = pos;
-    }
-
-    pub fn set_direction(&mut self, dir: (f32, f32, f32)) {
-        self.direction = dir;
-    }
-    
-    //mew
     pub fn get_rot_y(&self) -> [[f32; 4]; 4] {
         let angle:f32 = self.angle.1;
         [
@@ -88,7 +56,8 @@ impl CameraState {
             [-angle.sin(),0.0,angle.cos(),   0.0],
             [0.0         ,0.0,0.0        ,   1.0],
         ]
-    }pub fn get_rot_z(&self) -> [[f32; 4]; 4] {
+    }
+    pub fn get_rot_z(&self) -> [[f32; 4]; 4] {
         let angle:f32 = self.angle.2;
         [
             [angle.cos(),-angle.sin(),0.0,   0.0],

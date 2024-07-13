@@ -20,9 +20,9 @@ const vec3 LIGHT = vec3(-0.2, 0.8, 0.1);
 
 
 void main() {
-    vec3 grass_albedo = texture(grass_tex, v_tex_coords).rgb;
-    vec3 rock_albedo = texture(rock_tex, v_tex_coords).rgb;
-    vec3 sand_albedo = texture(sand_tex, v_tex_coords).rgb;
+    vec3 grass_albedo = texture(grass_tex, v_tex_coords*4.0).rgb;
+    vec3 rock_albedo = texture(rock_tex, v_tex_coords*4.0).rgb;
+    vec3 sand_albedo = texture(sand_tex, v_tex_coords*4.0).rgb;
 
     float rock_grass_weight = v_normal.y;
     float sand_rockgrass_weight = v_position.y;
@@ -40,8 +40,10 @@ void main() {
     sand_rockgrass_weight /= max_sand_height - min_rockgrass_height;
     
     vec3 albedo = mix(sand_albedo,rockgrass_albedo,sand_rockgrass_weight); 
-
+    //vec3 albedo = vec3(v_normal.x *0.5+0.5,v_normal.y *0.5+0.5,v_normal.z *0.5+0.5);
+    //gl_FragColor = vec4(albedo,1.0);
     float lum = max(dot(normalize(v_normal), normalize(LIGHT)), 0.0);
     vec3 color = (0.3 + 0.7 * lum) * albedo;
     gl_FragColor = vec4(color, 1.0);
+
 }

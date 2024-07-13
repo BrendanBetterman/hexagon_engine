@@ -1,5 +1,6 @@
-use noise::Perlin;
 use Resource::*;
+
+#[derive(PartialEq)]
 pub enum Resource{
     Wood,
     Ore,
@@ -32,21 +33,6 @@ impl HexTile{
             z,
             resource,
             number,
-        }
-    }
-}
-
-pub struct WorldGen{
-    pub smoothness: f64,
-    pub slope: f64,
-    pub noise: Perlin,
-}
-impl WorldGen {
-    pub fn new(smoothness: f64, slope: f64, noise: Perlin)->WorldGen{
-        WorldGen{
-            smoothness,
-            slope,
-            noise,
         }
     }
 }
